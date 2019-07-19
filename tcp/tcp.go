@@ -6,9 +6,9 @@ package tcp
 
 import (
 	"fmt"
+	"github.com/auto-cdp/utils/log"
 	"io"
 	"net"
-	"utils/log"
 )
 
 type DataFunc func(string)

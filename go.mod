@@ -46,3 +46,5 @@ require (
 	gopkg.in/ory-am/dockertest.v3 v3.3.4 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 )
+
+replace github.com/auto-cdp/utils => ./
