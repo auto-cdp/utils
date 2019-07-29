@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"github.com/hashicorp/go-getter"
+	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 	"io"
 	"io/ioutil"
@@ -28,13 +29,13 @@ func WriteUUID2File(uuidfile string) error {
 	if ! IsDir(fpath){
 		err := os.MkdirAll(fpath, 0755)
 		if err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 	}
 	u1 := uuid.Must(uuid.NewV4())
 	err := ioutil.WriteFile(uuidfile, []byte(u1.String()), 0600)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	return nil
 }
@@ -42,7 +43,7 @@ func WriteUUID2File(uuidfile string) error {
 func ReadUUIDFromFile(uuidfile string) (string, error) {
 	uuidbyte, err := ioutil.ReadFile(uuidfile)
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	return string(uuidbyte), nil
 }
@@ -51,7 +52,7 @@ func GetLocalIP() ([]string, error) {
 	var iplist []string
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	for _, address := range addrs {
@@ -68,7 +69,7 @@ func GetLocalIP() ([]string, error) {
 func GetHostName() (string, error) {
 	hn, err := os.Hostname()
 	if err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	return hn, nil
 }
@@ -78,7 +79,7 @@ func GetHostName() (string, error) {
 func DownloadCode(dst, src string) error {
 	err := getter.GetAny(dst, src)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	return nil
@@ -92,20 +93,20 @@ func CopyFile(src, dst string) error {
 	var srcinfo os.FileInfo
 
 	if srcfd, err = os.Open(src); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	defer srcfd.Close()
 
 	if dstfd, err = os.Create(dst); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	defer dstfd.Close()
 
 	if _, err = io.Copy(dstfd, srcfd); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	if srcinfo, err = os.Stat(src); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	return os.Chmod(dst, srcinfo.Mode())
 }
@@ -117,15 +118,15 @@ func CopyDir(src, dst string) error {
 	var srcinfo os.FileInfo
 
 	if srcinfo, err = os.Stat(src); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	if err = os.MkdirAll(dst, srcinfo.Mode()); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	if fds, err = ioutil.ReadDir(src); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	for _, fd := range fds {
 		srcfp := path.Join(src, fd.Name())
@@ -133,11 +134,11 @@ func CopyDir(src, dst string) error {
 
 		if fd.IsDir() {
 			if err = CopyDir(srcfp, dstfp); err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 		} else {
 			if err = CopyFile(srcfp, dstfp); err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 		}
 	}
@@ -148,13 +149,13 @@ func CopyDir(src, dst string) error {
 func ChownFile(fname, uname string) error {
 	suser, err := user.Lookup(uname)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	uid, _ := strconv.Atoi(suser.Uid)
 	gid, _ := strconv.Atoi(suser.Gid)
 	err = os.Chown(fname, uid, gid)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	return nil
 }
@@ -167,14 +168,14 @@ func ChownDirR(dname, uname string) error {
 
 	suser, err := user.Lookup(uname)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	uid, _ := strconv.Atoi(suser.Uid)
 	gid, _ := strconv.Atoi(suser.Gid)
 	err = os.Chown(dname, uid, gid)
 
 	if fds, err = ioutil.ReadDir(dname); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	for _, fd := range fds {
@@ -182,11 +183,11 @@ func ChownDirR(dname, uname string) error {
 
 		if fd.IsDir() {
 			if err = ChownDirR(srcfp, uname); err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 		} else {
 			if err = ChownFile(srcfp, uname); err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 		}
 	}
@@ -202,7 +203,7 @@ func ChmodDirR(dname string, mode os.FileMode) error {
 	err = os.Chmod(dname, mode)
 
 	if fds, err = ioutil.ReadDir(dname); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	for _, fd := range fds {
@@ -210,11 +211,11 @@ func ChmodDirR(dname string, mode os.FileMode) error {
 
 		if fd.IsDir() {
 			if err = ChmodDirR(srcfp, mode); err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 		} else {
 			if err = os.Chmod(srcfp, mode); err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 		}
 	}
@@ -245,17 +246,17 @@ func CheckFileOwner(file, uname string) bool {
 func RemoveContents(dir string) error {
 	d, err := os.Open(dir)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	defer d.Close()
 	names, err := d.Readdirnames(-1)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	for _, name := range names {
 		err = os.RemoveAll(filepath.Join(dir, name))
 		if err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 	}
 	return nil
@@ -266,12 +267,12 @@ func RemoveContents(dir string) error {
 func readDirNames(dirname string) ([]string, error) {
 	f, err := os.Open(dirname)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	names, err := f.Readdirnames(-1)
 	f.Close()
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	sort.Strings(names)
 	return names, nil
@@ -285,7 +286,7 @@ func WalkOnce(root string, walkFn filepath.WalkFunc) error {
 	if err == filepath.SkipDir {
 		return nil
 	}
-	return err
+	return errors.WithStack(err)
 }
 
 // 仅walk path, calling walkFn.
@@ -297,7 +298,7 @@ func walkOnce(path string, info os.FileInfo, walkFn filepath.WalkFunc) error {
 	names, err := readDirNames(path)
 
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	for _, name := range names {
@@ -305,14 +306,14 @@ func walkOnce(path string, info os.FileInfo, walkFn filepath.WalkFunc) error {
 		fileInfo, err := os.Lstat(filename)
 		if err != nil {
 			if err := walkFn(filename, fileInfo, err); err != nil && err != filepath.SkipDir {
-				return err
+				return errors.WithStack(err)
 			}
 		}
 
 		err = walkFn(filename, fileInfo, nil)
 
 		if err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 	}
 	return nil
