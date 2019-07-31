@@ -6,7 +6,7 @@ package tcp
 
 import (
 	"fmt"
-	"github.com/auto-cdp/utils/log"
+	"github.com/glory-cd/utils/log"
 	"io"
 	"net"
 )

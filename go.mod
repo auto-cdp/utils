@@ -1,4 +1,4 @@
-module github.com/auto-cdp/utils
+module github.com/glory-cd/utils
 
 go 1.12
 
@@ -47,4 +47,4 @@ require (
 	gotest.tools v2.2.0+incompatible // indirect
 )
 
-replace github.com/auto-cdp/utils => ./
+replace github.com/glory-cd/utils => ./
