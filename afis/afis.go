@@ -28,7 +28,7 @@ func GetMd5String(str string) string {
 
 func WriteUUID2File(uuidfile string) error {
 	fpath := filepath.Dir(uuidfile)
-	if ! IsDir(fpath){
+	if !IsDir(fpath) {
 		err := os.MkdirAll(fpath, 0755)
 		if err != nil {
 			return errors.WithStack(err)
@@ -360,7 +360,6 @@ func IsUser(uname string) bool {
 	return true
 }
 
-
 //解压所zip
 func Unzip(archive, target string) error {
 	reader, err := zip.OpenReader(archive)
@@ -376,7 +375,7 @@ func Unzip(archive, target string) error {
 		path := filepath.Join(target, file.Name)
 		if file.FileInfo().IsDir() {
 			err := os.MkdirAll(path, file.Mode())
-			if err != nil{
+			if err != nil {
 				return errors.WithStack(err)
 			}
 			continue
@@ -480,5 +479,9 @@ func Zipit(source, target, filter string) error {
 		return errors.WithStack(err)
 	})
 
-	return err
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }
