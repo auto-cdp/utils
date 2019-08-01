@@ -1,6 +1,7 @@
 package afis
 
 import (
+	"archive/zip"
 	"crypto/md5"
 	"encoding/hex"
 	"github.com/hashicorp/go-getter"
@@ -15,6 +16,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 	"syscall"
 )
 
@@ -356,4 +358,127 @@ func IsUser(uname string) bool {
 		return false
 	}
 	return true
+}
+
+
+//解压所zip
+func Unzip(archive, target string) error {
+	reader, err := zip.OpenReader(archive)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	if err := os.MkdirAll(target, 0755); err != nil {
+		return errors.WithStack(err)
+	}
+
+	for _, file := range reader.File {
+		path := filepath.Join(target, file.Name)
+		if file.FileInfo().IsDir() {
+			err := os.MkdirAll(path, file.Mode())
+			if err != nil{
+				return errors.WithStack(err)
+			}
+			continue
+		}
+
+		fileReader, err := file.Open()
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		defer fileReader.Close()
+
+		targetFile, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		defer targetFile.Close()
+
+		if _, err := io.Copy(targetFile, fileReader); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
+	return nil
+}
+
+//压缩为zip格式
+func Zipit(source, target, filter string) error {
+	var err error
+	if isAbs := filepath.IsAbs(source); !isAbs {
+		source, err = filepath.Abs(source) // 将传入路径直接转化为绝对路径
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	zipfile, err := os.Create(target)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	defer zipfile.Close()
+
+	archive := zip.NewWriter(zipfile)
+	defer archive.Close()
+
+	info, err := os.Stat(source)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	var baseDir string
+	if info.IsDir() {
+		baseDir = filepath.Base(source)
+	}
+
+	err = filepath.Walk(source, func(path string, info os.FileInfo, err error) error {
+
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		//将遍历到的路径与pattern进行匹配
+		ism, err := filepath.Match(filter, info.Name())
+
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		//如果匹配就忽略
+		if ism {
+			return nil
+		}
+
+		header, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		if baseDir != "" {
+			header.Name = filepath.Join(baseDir, strings.TrimPrefix(path, source))
+		}
+
+		if info.IsDir() {
+			header.Name += "/"
+		} else {
+			header.Method = zip.Deflate
+		}
+
+		writer, err := archive.CreateHeader(header)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		defer file.Close()
+		_, err = io.Copy(writer, file)
+		return errors.WithStack(err)
+	})
+
+	return err
 }
