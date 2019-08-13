@@ -42,3 +42,15 @@ func TestCheckFileOwnerNoNormal(t *testing.T){
 		t.Error("/home/liupeng/AlarmWechat:alarm = error")
 	}
 }
+
+func TestIsExecutableNormal(t *testing.T) {
+	if !IsExecutable("/home/liupeng/ant"){
+		t.Error("/home/liupeng/ant = error")
+	}
+}
+
+func TestIsExecutableNoNormal(t *testing.T) {
+	if IsExecutable("/home/liupeng/tcpdump.cap"){
+		t.Error("/home/liupeng/tcpdump.cap = error")
+	}
+}
