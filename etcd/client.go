@@ -6,8 +6,8 @@ package etcd
 
 import (
 	"context"
-	"github.com/coreos/etcd/clientv3"
 	"github.com/glory-cd/utils/log"
+	"github.com/coreos/etcd/clientv3"
 	"time"
 )
 

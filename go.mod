@@ -38,6 +38,7 @@ require (
 	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/ory/dockertest v3.3.4+incompatible // indirect
 	github.com/pkg/errors v0.8.0
+	github.com/robfig/cron/v3 v3.0.0 // indirect
 	github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
 	github.com/smartystreets/goconvey v0.0.0-20190731233626-505e41936337
 	github.com/soheilhy/cmux v0.1.4 // indirect
