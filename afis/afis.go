@@ -289,7 +289,7 @@ func WalkOnce(root string, walkFn filepath.WalkFunc) error {
 	if err == filepath.SkipDir {
 		return nil
 	}
-	return errors.WithStack(err)
+	return err
 }
 
 // 仅walk path, calling walkFn.
